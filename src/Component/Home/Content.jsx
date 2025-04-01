@@ -1,11 +1,15 @@
 import React from 'react'
+import { Routes,Route } from 'react-router-dom'
+import Homedashboard from './Homedashboard'
 
 const Content = () => {
   return (
     <div className="content">
-      <h1>Welcome to the Dashboard</h1>
-      <p>This is the main content area.</p>
+      <Routes>
+        <Route path="/" element={<Homedashboard />} />
+      </Routes>
     </div>
+
   )
 }
 
