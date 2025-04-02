@@ -5,9 +5,8 @@ export const doLogin = async (data,next) =>{
 }
 
 // doLogout
-export const doLogout = (next) =>{
+export const doLogout = () =>{
     localStorage.removeItem("user-innovator");
-    next()
 }
 
 // isLoggedIn
@@ -22,11 +21,11 @@ export const isLoggedIn = () =>{
 }
 
 // getToken
-// export const getToken = () =>{
-//     if(isLoggedIn()){
-//         return JSON.parse(localStorage.getItem("data")).jwtToken;
-//     }else{
-//         return null;
-//     }
-// }
+export const getToken = () =>{
+    if(isLoggedIn()){
+        return JSON.parse(localStorage.getItem("user-innovator")).jwtToken;
+    }else{
+        return null;
+    }
+}
 

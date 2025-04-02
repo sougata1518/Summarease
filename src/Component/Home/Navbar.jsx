@@ -17,11 +17,9 @@ const Navbar = () => {
         if(code!=null && code.length>5){
             // call server
             loginUser({codeStr:code}).then(response=>{
-                console.log(response);
                 doLogin(response,()=>{navigate("/")})
             }).catch(error => console.log(error))
         }
-        console.log("called...")
     },[]);
 
     const [showLogin, setShowLogin] = useState(false);
