@@ -10,7 +10,7 @@ const Content = () => {
       <Routes>
         <Route path="/" element={<Homedashboard />} />
         <Route path="/edit-text" element={<Editorlogin />} />
-        {/* <Route path="/edit-text" element={<Texteditor />} /> */}
+        <Route path="/text-editor/:roomId" element={<Texteditor />} />
       </Routes>
     </div>
 

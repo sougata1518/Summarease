@@ -1,8 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import html2pdf from "html2pdf.js";
 import Quill from "quill";
+import { useAccessCard } from "../Globalvariable/Accessprovider";
+import { getToken, isLoggedIn } from "../Localstorage";
+import { useParams } from "react-router-dom";
 
 const Size = Quill.import("formats/size");
 Size.whitelist = ["10px", "12px", "14px", "16px", "18px", "24px", "32px"];
@@ -50,6 +53,45 @@ const TextEditor = () => {
     content: "",
     category: "Programming",
   });
+  const { generatedLink } = useAccessCard();
+  const { roomId } = useParams();
+  const jwt = getToken();
+  const [ws, setWs] = useState(null);
+
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+    const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
+
+    socket.onopen = () => {
+      console.log("Connected to WebSocket");
+      setWs(socket);
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Received message:", data);
+
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            text: data.text,
+            senderId: data.uId,
+            uName: data.uName || "Unknown"  // Fallback if uName is missing
+          }
+        ]);
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+      }
+    };
+
+
+    socket.onclose = () => {
+      console.log("Disconnected from WebSocket");
+    };
+
+    return () => socket.close();
+  }, [roomId, jwt]);
 
   const contentRef = useRef();
 
@@ -59,7 +101,7 @@ const TextEditor = () => {
 
   const downloadPDF = () => {
     const element = document.createElement("div");
-  
+
     element.innerHTML = `
       <style>
         .ql-align-center { text-align: center; }
@@ -78,16 +120,16 @@ const TextEditor = () => {
       </style>
       ${formData.content}
     `;
-  
+
     // 🔍 Extract the first heading (h1–h6) as the title
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = formData.content;
     const heading = tempDiv.querySelector("h1, h2, h3, h4, h5, h6");
     let title = heading ? heading.textContent.trim() : "text-editor-content";
-  
+
     // Sanitize filename (remove unsafe characters)
     title = title.replace(/[<>:"/\\|?*]+/g, "").substring(0, 50); // max 50 chars
-  
+
     html2pdf()
       .from(element)
       .set({
@@ -98,8 +140,8 @@ const TextEditor = () => {
       })
       .save();
   };
-  
-  
+
+
 
   return (
     <div className="form-container">

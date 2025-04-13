@@ -6,6 +6,14 @@ html, body {
   display: flex;
 }
 
+.content-wrapper {
+  margin-left: 250px;
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
 /* App Container */
 .app-container {
   display: flex;
@@ -114,49 +122,6 @@ html, body {
   margin-right: 10px;
 }
 
-/* OR Separator */
-.or-separator {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 15px 0;
-}
-
-.or-separator span {
-  flex: 1;
-  height: 1px;
-  background: #ddd;
-  position: relative;
-}
-
-.or-separator span::before {
-  content: "OR";
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 0 10px;
-  color: #666;
-  font-weight: bold;
-}
-
-/* Submit Button */
-.submit-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  font-size: 1rem;
-  border-radius: 5px;
-  cursor: pointer;
-  width: 100%;
-  margin-top: 10px;
-}
-
-.submit-btn:hover {
-  background-color: #0056b3;
-}
-
 
 
 
@@ -198,8 +163,6 @@ html, body {
 /* Content */
 .content {
   flex: 1;
-  padding: 20px;
-  background: #f4f4f4;
 }
 
 
@@ -258,15 +221,39 @@ html, body {
 
 /* VideoMeetingPage.css */
 
-.video-meeting-page {
+/* .video-meeting-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* justify-content: center; */
   min-height: 100vh;
   background: white;
   padding: 1rem;
   text-align: center;
+} */
+
+.video-meeting-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f4f4f4;
+  padding: 1rem;
+}
+
+.meeting-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 3rem 2rem;
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  transition: box-shadow 0.3s ease;
+}
+
+.meeting-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
 }
 
 .heading {
@@ -284,13 +271,17 @@ html, body {
 .meeting-controls {
   display: flex;
   flex-direction: column;
+  align-items: center;  /* <-- center inner content horizontally */
   gap: 1rem;
   width: 100%;
   max-width: 400px;
+  margin: 0 auto; /* optional, centers the block if needed */
 }
+
 
 .new-meeting-btn {
   background-color: #1a73e8;
+  width: 30vw;
   color: white;
   padding: 0.75rem 1rem;
   border: none;
@@ -309,6 +300,7 @@ html, body {
 
 .join-input {
   flex-grow: 1;
+  width: 23vw;
   padding: 0.75rem;
   border: 1px solid #ccc;
   border-right: none;
@@ -331,28 +323,6 @@ html, body {
   cursor: not-allowed;
 }
 
-.dropdown-menu {
-  position: absolute;
-  margin-top: -7.0rem;
-  width: 30vw;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 0.5rem;
-  z-index: 1000;
-}
-
-.dropdown-item {
-  background: none;
-  border: none;
-  padding: 0.5rem 1rem;
-  text-align: left;
-  width: 100%;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
 .meeting-controls {
   position: relative;
   display: flex;
@@ -362,10 +332,6 @@ html, body {
   max-width: 400px;
 }
 
-
-.dropdown-item:hover {
-  background-color: #f1f3f4;
-}
 
 .link-dropdown {
   position: fixed; /* Or absolute, depending on your layout */

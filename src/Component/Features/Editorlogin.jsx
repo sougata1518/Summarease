@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
+import { useAccessCard } from '../Globalvariable/Accessprovider';
+import { useNavigate } from 'react-router-dom';
+import { createEditor } from '../Services/Editor';
 
 const Editorlogin = () => {
   const [code, setCode] = useState("");
+  const { generatedLink, setGeneratedLink } = useAccessCard();
+  const navigate = useNavigate()
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLinkDropdown, setShowLinkDropdown] = useState(false);
-  const [generatedLink, setGeneratedLink] = useState("");
 
   const handleJoin = () => {
     if (code.trim()) {
-      alert(`Joining meeting with code/link: ${code}`);
+      // alert(`Joining meeting with code/link: ${code}`);
+      navigate(`/text-editor/${code.trim()}`)
     }
   };
 
@@ -21,30 +26,29 @@ const Editorlogin = () => {
     setGeneratedLink(newLink);
     setShowLinkDropdown(true);
     setShowDropdown(false);
+    // createEditor({
+    //   "editorId": newLink,
+    //   "deltaJson": "{\"ops\":[{\"insert\":\"\\n\"}]}"
+    // },()=>{navigate(`/text-editor/${newLink}`)})
+
+    // change
+    navigate(`/text-editor/${newLink}`)
   };
 
-  const handleCreateNow = () => {
-    alert("Creating an instant meeting...");
-    setShowDropdown(false);
-  };
 
-  const handleNewMeeting = () => {
-    setShowDropdown(!showDropdown);
-    setShowLinkDropdown(false);
-  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(generatedLink);
-    alert("Link copied to clipboard!");
   };
 
   return (
     <div className="video-meeting-page">
+    <div className="meeting-card">
       <h1 className="heading">Meetings for everyone</h1>
       <p className="description">Connect, collaborate, and start writing</p>
 
       <div className="meeting-controls">
-        <button onClick={handleNewMeeting} className="new-meeting-btn">
+        <button onClick={handleCreateLater} className="new-meeting-btn">
           New meeting
         </button>
 
@@ -65,18 +69,6 @@ const Editorlogin = () => {
           </button>
         </div>
 
-        {showDropdown && (
-          <div className="dropdown-menu">
-            <button onClick={handleCreateLater} className="dropdown-item">
-              📅 Create a meeting for later
-            </button>
-            <hr />
-            <button onClick={handleCreateNow} className="dropdown-item">
-              ⚡ Create an instant meeting
-            </button>
-          </div>
-        )}
-
         {showLinkDropdown && (
           <>
             <div className="overlay" />
@@ -96,9 +88,9 @@ const Editorlogin = () => {
             </div>
           </>
         )}
-
       </div>
     </div>
+  </div>
   );
 };
 
