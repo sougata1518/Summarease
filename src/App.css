@@ -235,10 +235,11 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* justify-content: center; */
   min-height: 100vh;
   background: #f4f4f4;
   padding: 1rem;
+  height: 100vh;
 }
 
 .meeting-card {
@@ -275,7 +276,7 @@ html, body {
   gap: 1rem;
   width: 100%;
   max-width: 400px;
-  margin: 0 auto; /* optional, centers the block if needed */
+  margin: 0 auto; 
 }
 
 

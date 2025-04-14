@@ -5,3 +5,13 @@ export const createEditor = async (textContent,next) => {
         .then(response=>response.data)
     next()
 }
+
+
+export const fetchContent = async (roomId) => {
+    return await privateAxios.get(`/fetchContent/${roomId}`)
+        .then(response=>response.data)
+}
+
+export const updateContent = async (deltaJson) => {
+    await privateAxios.post(`/updateContent`,deltaJson)
+}
