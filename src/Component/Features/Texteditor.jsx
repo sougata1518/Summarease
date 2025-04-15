@@ -74,7 +74,7 @@ const TextEditor = () => {
         }
       })
       .catch((error) => console.log(error));
-    const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
+    const socket = new WebSocket(`wss://0596-103-192-119-74.ngrok-free.app/ws/${roomId}/${jwt}`);
     socket.onopen = () => {
       console.log("Connected to WebSocket");
       setWs(socket);
