@@ -15,3 +15,6 @@ export const fetchContent = async (roomId) => {
 export const updateContent = async (deltaJson) => {
     await privateAxios.post(`/updateContent`,deltaJson)
 }
+export const setContent = async (doc) => {
+    await privateAxios.post(`/setFullContent`,doc)
+}

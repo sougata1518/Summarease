@@ -1,8 +1,8 @@
 import axios from "axios";
 import { getToken } from "../Localstorage";
 
-export const BASE_URL = 'http://localhost:8080';
-export const PRIVATE_URL = 'http://localhost:8080/index';
+export const BASE_URL = 'http://192.168.0.184:8080';
+export const PRIVATE_URL = 'http://192.168.0.184:8080/index';
 
 export const publicAxios = axios.create({
     baseURL:BASE_URL

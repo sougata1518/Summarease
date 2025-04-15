@@ -6,7 +6,7 @@ import Quill from "quill";
 import { useAccessCard } from "../Globalvariable/Accessprovider";
 import { getToken, isLoggedIn } from "../Localstorage";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchContent, updateContent } from "../Services/Editor";
+import { fetchContent, updateContent,setContent} from "../Services/Editor";
 
 // Configure allowed sizes for Quill
 const Size = Quill.import("formats/size");
@@ -67,15 +67,14 @@ const TextEditor = () => {
         if (response && response.ops && quillRef.current) {
           const quill = quillRef.current.getEditor();
           quill.setContents(response); // Set the Delta
+          quill.update();
           lastAcceptedDelta.current = quill.getContents();
           setFormData((prev) => ({ ...prev, content: quill.root.innerHTML }));
+          console.log(response)
         }
       })
       .catch((error) => console.log(error));
-
-    // Open the WebSocket connection (using template literal for URL)
     const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
-
     socket.onopen = () => {
       console.log("Connected to WebSocket");
       setWs(socket);
@@ -92,12 +91,12 @@ const TextEditor = () => {
           isSocketUpdate.current = true;
           quill.updateContents(data); // Apply the delta from WS
           isSocketUpdate.current = false;
-
           // Update our last accepted state
           lastAcceptedDelta.current = quill.getContents();
           setFormData((prev) => ({ ...prev, content: quill.root.innerHTML }));
           // const length = quill.getLength(); 
-          quill.focus(); quill.setSelection(quill.getLength() - 1, 0);
+          quill.focus(); 
+          quill.setSelection(quill.getLength() - 1, 0);
         }
       } catch (err) {
         console.error("Failed to parse WebSocket message:", err);
@@ -122,17 +121,26 @@ const TextEditor = () => {
   //    so only the WS update will actually change the editor.
   const handleQuillChange = (value, delta, source, editor) => {
     if (source === "user" && !isSocketUpdate.current) {
+      console.log(JSON.stringify(lastAcceptedDelta.current))
+      console.log(JSON.stringify(editor.getContents()))
       updateContent({
+        prevDoc: JSON.stringify(lastAcceptedDelta.current),
         fullDoc: JSON.stringify(editor.getContents()),
         updateDoc: JSON.stringify(delta),
         uuid: roomId,
       }).catch((error) => console.log(error));
-
+      let currentContent=JSON.stringify(editor.getContents())
       // Revert the local change; rely on WebSocket to provide the update
       if (lastAcceptedDelta.current && quillRef.current) {
         const quill = quillRef.current.getEditor();
         quill.setContents(lastAcceptedDelta.current);
       }
+      /*setContent({
+        fullDoc: JSON.stringify(editor.getContents()),
+        updateDoc: "",
+        uuid: roomId,
+      }).catch((error) => console.log(error));
+      console.log("content set")*/
     }
   };
 
