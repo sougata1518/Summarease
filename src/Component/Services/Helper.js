@@ -1,10 +1,10 @@
 import axios from "axios";
 import { getToken } from "../Localstorage";
 
-//export const BASE_URL = 'http://192.168.0.184:8080';
-//export const PRIVATE_URL = 'http://192.168.0.184:8080/index';
-export const BASE_URL = 'https://0596-103-192-119-74.ngrok-free.app';
-export const PRIVATE_URL = 'https://0596-103-192-119-74.ngrok-free.app/index';
+export const BASE_URL = 'http://localhost:8080';
+export const PRIVATE_URL = 'http://localhost:8080/index';
+//export const BASE_URL = 'https://0596-103-192-119-74.ngrok-free.app';
+//export const PRIVATE_URL = 'https://0596-103-192-119-74.ngrok-free.app/index';
 export const publicAxios = axios.create({
     baseURL:BASE_URL
 })

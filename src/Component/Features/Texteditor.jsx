@@ -32,6 +32,7 @@ const modules = {
 };
 
 const TextEditor = () => {
+  const pendingSelection = useRef(null);
   // Holds the HTML content for PDF generation
   const [formData, setFormData] = useState({
     title: "",
@@ -74,7 +75,8 @@ const TextEditor = () => {
         }
       })
       .catch((error) => console.log(error));
-    const socket = new WebSocket(`wss://0596-103-192-119-74.ngrok-free.app/ws/${roomId}/${jwt}`);
+    //const socket = new WebSocket(`wss://192.168.0.184:8080/ws/${roomId}/${jwt}`);
+    const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
     socket.onopen = () => {
       console.log("Connected to WebSocket");
       setWs(socket);
@@ -84,25 +86,32 @@ const TextEditor = () => {
       try {
         const data = JSON.parse(event.data);
         console.log("WebSocket delta received:", data);
-
+    
         if (quillRef.current) {
           const quill = quillRef.current.getEditor();
-          // Mark this update as a WS-driven update
           isSocketUpdate.current = true;
-          quill.updateContents(data); // Apply the delta from WS
+    
+          quill.updateContents(data); // Apply the delta
           isSocketUpdate.current = false;
-          // Update our last accepted state
+          console.log("index=",pendingSelection.current.index)
           lastAcceptedDelta.current = quill.getContents();
           setFormData((prev) => ({ ...prev, content: quill.root.innerHTML }));
-          // const length = quill.getLength(); 
-          quill.focus(); 
-          quill.setSelection(quill.getLength() - 1, 0);
+    
+          quill.focus();
+    
+          // Apply stored selection if any
+          if (pendingSelection.current) {
+            const length = quill.getLength();
+            //const safeIndex = Math.min(pendingSelection.current.index, length - 1);
+            const safeIndex = (pendingSelection.current.index);
+            quill.setSelection(safeIndex, pendingSelection.current.length);
+            pendingSelection.current = null; // Clear after applying
+          }
         }
       } catch (err) {
         console.error("Failed to parse WebSocket message:", err);
       }
-    };
-
+    };    
     socket.onclose = () => {
       console.log("Disconnected from WebSocket");
       x++;
@@ -121,28 +130,28 @@ const TextEditor = () => {
   //    so only the WS update will actually change the editor.
   const handleQuillChange = (value, delta, source, editor) => {
     if (source === "user" && !isSocketUpdate.current) {
-      console.log(JSON.stringify(lastAcceptedDelta.current))
-      console.log(JSON.stringify(editor.getContents()))
+      const quill = quillRef.current.getEditor();
+      const currentSelection = quill.getSelection();
+  
+      // Save the user's current selection
+      if (currentSelection) {
+        pendingSelection.current = currentSelection;
+      }
+  
       updateContent({
         prevDoc: JSON.stringify(lastAcceptedDelta.current),
         fullDoc: JSON.stringify(editor.getContents()),
         updateDoc: JSON.stringify(delta),
         uuid: roomId,
       }).catch((error) => console.log(error));
-      let currentContent=JSON.stringify(editor.getContents())
-      // Revert the local change; rely on WebSocket to provide the update
+  
+      // Revert the local change
       if (lastAcceptedDelta.current && quillRef.current) {
-        const quill = quillRef.current.getEditor();
         quill.setContents(lastAcceptedDelta.current);
       }
-      /*setContent({
-        fullDoc: JSON.stringify(editor.getContents()),
-        updateDoc: "",
-        uuid: roomId,
-      }).catch((error) => console.log(error));
-      console.log("content set")*/
     }
   };
+  
 
   // PDF download: create a temporary element with styling and content
   const downloadPDF = () => {

@@ -5,8 +5,8 @@ import { loginUser } from "../Services/User";
 import { doLogin } from "../Localstorage";
 import { useNavigate } from "react-router-dom";
 const CLIENT_ID = "1063873795909-9du6s0hvtl0gf27gqvncvqsnprforg2j.apps.googleusercontent.com";
-//const REDIRECT_URI = "http://localhost:5173";
-const REDIRECT_URI = "https://summarease-eight.vercel.app";
+const REDIRECT_URI = "http://localhost:5173";
+//const REDIRECT_URI = "https://summarease-eight.vercel.app";
 
 const Navbar = () => {
 
