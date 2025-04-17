@@ -6,14 +6,13 @@ import Quill from "quill";
 import { useAccessCard } from "../Globalvariable/Accessprovider";
 import { getToken, isLoggedIn } from "../Localstorage";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchContent, updateContent,setContent} from "../Services/Editor";
+import { fetchContent, updateContent } from "../Services/Editor";
 
-// Configure allowed sizes for Quill
+// Allow custom font sizes
 const Size = Quill.import("formats/size");
 Size.whitelist = ["10px", "12px", "14px", "16px", "18px", "24px", "32px"];
 Quill.register(Size, true);
 
-// Quill toolbar configuration
 const modules = {
   toolbar: [
     [{ font: [] }],
@@ -33,7 +32,6 @@ const modules = {
 
 const TextEditor = () => {
   const pendingSelection = useRef(null);
-  // Holds the HTML content for PDF generation
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -44,38 +42,30 @@ const TextEditor = () => {
   const jwt = getToken();
   const navigate = useNavigate();
   const { generatedLink } = useAccessCard();
-
-  // Quill editor reference
   const quillRef = useRef(null);
-
-  // WS connection state
   const [ws, setWs] = useState(null);
-
-  // Ref to mark if the update is coming from WS
   const isSocketUpdate = useRef(false);
-
-  // Ref to store the last accepted delta from the server/WS
   const lastAcceptedDelta = useRef(null);
-  let x=0
+  let closeAttempt = 0;
 
-  // Fetch initial content and set up the WebSocket connection
   useEffect(() => {
     if (!isLoggedIn()) return;
 
-    // Fetch the initial document delta from your server
     fetchContent(roomId)
       .then((response) => {
         if (response && response.ops && quillRef.current) {
           const quill = quillRef.current.getEditor();
-          quill.setContents(response); // Set the Delta
+          quill.setContents(response);
           quill.update();
           lastAcceptedDelta.current = quill.getContents();
-          setFormData((prev) => ({ ...prev, content: quill.root.innerHTML }));
-          console.log(response)
+          setFormData((prev) => ({
+            ...prev,
+            content: quill.root.innerHTML,
+          }));
         }
       })
       .catch((error) => console.log(error));
-    //const socket = new WebSocket(`wss://192.168.0.184:8080/ws/${roomId}/${jwt}`);
+
     const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
     socket.onopen = () => {
       console.log("Connected to WebSocket");
@@ -85,37 +75,53 @@ const TextEditor = () => {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("WebSocket delta received:", data);
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
     
-        if (quillRef.current) {
-          const quill = quillRef.current.getEditor();
-          isSocketUpdate.current = true;
+        isSocketUpdate.current = true;
+        quill.updateContents(data);
+        isSocketUpdate.current = false;
     
-          quill.updateContents(data); // Apply the delta
-          isSocketUpdate.current = false;
-          console.log("index=",pendingSelection.current.index)
-          lastAcceptedDelta.current = quill.getContents();
-          setFormData((prev) => ({ ...prev, content: quill.root.innerHTML }));
+        lastAcceptedDelta.current = quill.getContents();
+        setFormData((prev) => ({
+          ...prev,
+          content: quill.root.innerHTML,
+        }));
     
-          quill.focus();
+        // Check if the incoming delta contains a new line insert
+        const ops = data.ops || [];
+        const hasNewline = ops.some(
+          (op) => typeof op.insert === "string" && op.insert.includes("\n")
+        );
     
-          // Apply stored selection if any
-          if (pendingSelection.current) {
-            const length = quill.getLength();
-            //const safeIndex = Math.min(pendingSelection.current.index, length - 1);
-            const safeIndex = (pendingSelection.current.index);
-            quill.setSelection(safeIndex, pendingSelection.current.length);
-            pendingSelection.current = null; // Clear after applying
-          }
+        if (hasNewline) {
+          setTimeout(() => {
+            const len = quill.getLength();
+            quill.focus();
+            quill.setSelection(len - 1, 0);
+          }, 0);
         }
+    
+        // Restore selection if set manually from elsewhere
+        if (pendingSelection.current) {
+          const { index, length } = pendingSelection.current;
+          const safeIndex = Math.min(index, quill.getLength() - 1);
+          quill.setSelection(safeIndex, length);
+          pendingSelection.current = null;
+        }
+    
       } catch (err) {
         console.error("Failed to parse WebSocket message:", err);
       }
-    };    
+    };
+    
+    
+    
+
     socket.onclose = () => {
       console.log("Disconnected from WebSocket");
-      x++;
-      if (x > 1) {
+      closeAttempt++;
+      if (closeAttempt > 1) {
         alert("WebSocket connection lost.");
         navigate("/edit-text");
       }
@@ -124,39 +130,30 @@ const TextEditor = () => {
     return () => socket.close();
   }, [roomId, jwt, navigate]);
 
-  // When the user makes a change:
-  // 1. Send the update delta to the server.
-  // 2. Immediately revert the change by restoring last accepted content,
-  //    so only the WS update will actually change the editor.
   const handleQuillChange = (value, delta, source, editor) => {
     if (source === "user" && !isSocketUpdate.current) {
       const quill = quillRef.current.getEditor();
       const currentSelection = quill.getSelection();
-  
-      // Save the user's current selection
+
       if (currentSelection) {
         pendingSelection.current = currentSelection;
       }
-  
+
       updateContent({
         prevDoc: JSON.stringify(lastAcceptedDelta.current),
         fullDoc: JSON.stringify(editor.getContents()),
         updateDoc: JSON.stringify(delta),
         uuid: roomId,
       }).catch((error) => console.log(error));
-  
-      // Revert the local change
-      if (lastAcceptedDelta.current && quillRef.current) {
+
+      if (lastAcceptedDelta.current && quill) {
         quill.setContents(lastAcceptedDelta.current);
       }
     }
   };
-  
 
-  // PDF download: create a temporary element with styling and content
   const downloadPDF = () => {
     const element = document.createElement("div");
-
     element.innerHTML = `
       <style>
         .ql-align-center { text-align: center; }
@@ -174,7 +171,6 @@ const TextEditor = () => {
       ${formData.content}
     `;
 
-    // Extract a title from the first heading in the content for the PDF filename
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = formData.content;
     const heading = tempDiv.querySelector("h1, h2, h3, h4, h5, h6");
@@ -185,7 +181,7 @@ const TextEditor = () => {
       .from(element)
       .set({
         margin: 1,
-        filename: `${title || "text-editor-content"}.pdf`,
+        filename: `${title}.pdf`,
         html2canvas: { scale: 2 },
         jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
       })
