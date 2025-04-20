@@ -47,24 +47,31 @@ const TextEditor = () => {
   const isSocketUpdate = useRef(false);
   const lastAcceptedDelta = useRef(null);
   let closeAttempt = 0;
+  const versionIdRef = useRef(null);
 
   useEffect(() => {
     if (!isLoggedIn()) return;
-
     fetchContent(roomId)
-      .then((response) => {
-        if (response && response.ops && quillRef.current) {
-          const quill = quillRef.current.getEditor();
-          quill.setContents(response);
-          quill.update();
-          lastAcceptedDelta.current = quill.getContents();
-          setFormData((prev) => ({
-            ...prev,
-            content: quill.root.innerHTML,
-          }));
-        }
-      })
-      .catch((error) => console.log(error));
+  .then((response) => {
+    let resDoc = JSON.parse(response.fullDoc);
+    if (response && resDoc.ops && quillRef.current) {
+      console.log(response.fullDoc, " ", response.version);
+      versionIdRef.current=response.version;
+      const quill = quillRef.current.getEditor();
+      setTimeout(() => {
+        quill.setContents(resDoc);
+        quill.update();
+        lastAcceptedDelta.current = quill.getContents();
+        setFormData((prev) => ({
+          ...prev,
+          content: quill.root.innerHTML,
+        }));
+      }, 0); 
+    }
+  })
+  .catch((error) => console.log(error)
+    
+  );
 
     const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
     socket.onopen = () => {
@@ -75,11 +82,13 @@ const TextEditor = () => {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        versionIdRef.current=data.version
+        const update=JSON.parse(data.updateDoc);
         const quill = quillRef.current?.getEditor();
         if (!quill) return;
     
         isSocketUpdate.current = true;
-        quill.updateContents(data);
+        quill.updateContents(update);
         isSocketUpdate.current = false;
     
         lastAcceptedDelta.current = quill.getContents();
@@ -89,7 +98,7 @@ const TextEditor = () => {
         }));
     
         // Check if the incoming delta contains a new line insert
-        const ops = data.ops || [];
+        const ops = update.ops || [];
         const hasNewline = ops.some(
           (op) => typeof op.insert === "string" && op.insert.includes("\n")
         );
@@ -101,7 +110,6 @@ const TextEditor = () => {
             quill.setSelection(len - 1, 0);
           }, 0);
         }
-    
         // Restore selection if set manually from elsewhere
         if (pendingSelection.current) {
           const { index, length } = pendingSelection.current;
@@ -109,7 +117,6 @@ const TextEditor = () => {
           quill.setSelection(safeIndex, length);
           pendingSelection.current = null;
         }
-    
       } catch (err) {
         console.error("Failed to parse WebSocket message:", err);
       }
@@ -138,11 +145,11 @@ const TextEditor = () => {
       if (currentSelection) {
         pendingSelection.current = currentSelection;
       }
-
+      console.log(versionIdRef.current)
       updateContent({
-        prevDoc: JSON.stringify(lastAcceptedDelta.current),
         fullDoc: JSON.stringify(editor.getContents()),
         updateDoc: JSON.stringify(delta),
+        version:versionIdRef.current,
         uuid: roomId,
       }).catch((error) => console.log(error));
 
