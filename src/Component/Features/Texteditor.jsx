@@ -78,7 +78,7 @@ const TextEditor = () => {
       console.log("Connected to WebSocket");
       setWs(socket);
     };
-
+    //check
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
