@@ -8,7 +8,6 @@ import { getToken, isLoggedIn } from "../Localstorage";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchContent, updateContent } from "../Services/Editor";
 
-// Allow custom font sizes
 const Size = Quill.import("formats/size");
 Size.whitelist = ["10px", "12px", "14px", "16px", "18px", "24px", "32px"];
 Quill.register(Size, true);
@@ -52,26 +51,26 @@ const TextEditor = () => {
   useEffect(() => {
     if (!isLoggedIn()) return;
     fetchContent(roomId)
-  .then((response) => {
-    let resDoc = JSON.parse(response.fullDoc);
-    if (response && resDoc.ops && quillRef.current) {
-      console.log(response.fullDoc, " ", response.version);
-      versionIdRef.current=response.version;
-      const quill = quillRef.current.getEditor();
-      setTimeout(() => {
-        quill.setContents(resDoc);
-        quill.update();
-        lastAcceptedDelta.current = quill.getContents();
-        setFormData((prev) => ({
-          ...prev,
-          content: quill.root.innerHTML,
-        }));
-      }, 0); 
-    }
-  })
-  .catch((error) => console.log(error)
-    
-  );
+      .then((response) => {
+        let resDoc = JSON.parse(response.fullDoc);
+        if (response && resDoc.ops && quillRef.current) {
+          console.log(response.fullDoc, " ", response.version);
+          versionIdRef.current = response.version;
+          const quill = quillRef.current.getEditor();
+          setTimeout(() => {
+            quill.setContents(resDoc);
+            quill.update();
+            lastAcceptedDelta.current = quill.getContents();
+            setFormData((prev) => ({
+              ...prev,
+              content: quill.root.innerHTML,
+            }));
+          }, 0);
+        }
+      })
+      .catch((error) => console.log(error)
+
+      );
 
     const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
     socket.onopen = () => {
@@ -82,27 +81,27 @@ const TextEditor = () => {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        versionIdRef.current=data.version
-        const update=JSON.parse(data.updateDoc);
+        versionIdRef.current = data.version
+        const update = JSON.parse(data.updateDoc);
         const quill = quillRef.current?.getEditor();
         if (!quill) return;
-    
+
         isSocketUpdate.current = true;
         quill.updateContents(update);
         isSocketUpdate.current = false;
-    
+
         lastAcceptedDelta.current = quill.getContents();
         setFormData((prev) => ({
           ...prev,
           content: quill.root.innerHTML,
         }));
-    
+
         // Check if the incoming delta contains a new line insert
         const ops = update.ops || [];
         const hasNewline = ops.some(
           (op) => typeof op.insert === "string" && op.insert.includes("\n")
         );
-    
+
         if (hasNewline) {
           setTimeout(() => {
             const len = quill.getLength();
@@ -121,9 +120,9 @@ const TextEditor = () => {
         console.error("Failed to parse WebSocket message:", err);
       }
     };
-    
-    
-    
+
+
+
 
     socket.onclose = () => {
       console.log("Disconnected from WebSocket");
@@ -149,7 +148,7 @@ const TextEditor = () => {
       updateContent({
         fullDoc: JSON.stringify(editor.getContents()),
         updateDoc: JSON.stringify(delta),
-        version:versionIdRef.current,
+        version: versionIdRef.current,
         uuid: roomId,
       }).catch((error) => console.log(error));
 
@@ -196,26 +195,34 @@ const TextEditor = () => {
   };
 
   return (
-    <div className="form-container">
-      <h2 className="form-title">Text Editor</h2>
-      <form onSubmit={(e) => e.preventDefault()}>
-        <ReactQuill
-          ref={quillRef}
-          value={formData.content}
-          onChange={handleQuillChange}
-          modules={modules}
-          theme="snow"
-          placeholder="Waiting for WebSocket content..."
-          className="text-editor"
-          style={{ height: "300px", marginBottom: "20px" }}
-        />
-        <div className="button-group">
-          <button type="button" className="create-btn" onClick={downloadPDF}>
+    <div className="bg-gray-100 min-h-[90vh] flex justify-center px-4 py-8 sm:py-10 md:py-12">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-6xl p-4 sm:p-6 md:p-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2 gap-4">
+          <h2 className="text-xl sm:text-2xl font-semibold">Text Editor</h2>
+
+          <button
+            type="button"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-md transition cursor-pointer"
+            onClick={downloadPDF}
+          >
             Download PDF
           </button>
         </div>
-      </form>
+
+        <form onSubmit={(e) => e.preventDefault()}>
+          <ReactQuill
+            ref={quillRef}
+            value={formData.content}
+            modules={modules}
+            theme="snow"
+            placeholder="Waiting for WebSocket content..."
+            className="min-h-[200px] h-[300px] mb-6"
+            onChange={handleQuillChange}
+          />
+        </form>
+      </div>
     </div>
+
   );
 };
 

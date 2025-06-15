@@ -1,18 +1,14 @@
 import React from 'react';
 import Navbar from './Navbar';
-import Sidebar from './Sidebar';
 import Content from './Content';
 
 const Home = () => {
   return (
-    <div className='app-container'>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="main-layout">
-        <Sidebar />
-        <div className="content-wrapper">
-          <Content />
-        </div>
-      </div>
+      {/* <main className="flex-1 bg-gray-100 p-6"> */}
+        <Content />
+      {/* </main> */}
     </div>
   );
 };

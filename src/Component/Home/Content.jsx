@@ -6,7 +6,7 @@ import Editorlogin from '../Features/Editorlogin'
 
 const Content = () => {
   return (
-    <div className="content">
+    <div className="bg-gray-100 rounded-lg shadow p-6">
       <Routes>
         <Route path="/" element={<Homedashboard />} />
         <Route path="/edit-text" element={<Editorlogin />} />
