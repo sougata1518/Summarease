@@ -24,6 +24,7 @@ const Editorlogin = () => {
     console.log(newLink)
 
     setGeneratedLink(newLink);
+    // navigate(`/text-editor/${newLink}`)
     createEditor({
       editorId: newLink,
       deltaJson: "{\"ops\":[{\"insert\":\"\\n\"}]}"
