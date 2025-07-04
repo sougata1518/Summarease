@@ -40,7 +40,7 @@ const Editorlogin = () => {
         <h1 className="text-3xl sm:text-4xl font-bold">Meetings for everyone</h1>
         <p className="text-gray-600 text-sm sm:text-base">Connect, collaborate, and start writing</p>
         <button onClick={handleCreateLater} className="bg-blue-600 text-white w-full py-2 rounded-md hover:bg-blue-700 transition cursor-pointer">
-          New meeting
+          New Room
         </button>
         <div className="flex flex-col sm:flex-row gap-2 w-full">
           <input type="text" placeholder="Enter a code or link" value={code} onChange={(e) => setCode(e.target.value)}

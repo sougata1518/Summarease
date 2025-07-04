@@ -101,11 +101,8 @@ const NavLinks = () => (
         <NavLink to="/edit-text" className={({ isActive }) => `hover:text-blue-400 ${isActive ? "text-blue-400 font-semibold" : ""}`}>
             Text Editor
         </NavLink>
-        <NavLink to="/settings" className={({ isActive }) => `hover:text-blue-400 ${isActive ? "text-blue-400 font-semibold" : ""}`}>
+        <NavLink to="/enhance" className={({ isActive }) => `hover:text-blue-400 ${isActive ? "text-blue-400 font-semibold" : ""}`}>
             Enhance with AI
-        </NavLink>
-        <NavLink to="/logout" className={({ isActive }) => `hover:text-red-400 ${isActive ? "text-red-400 font-semibold" : ""}`}>
-            Logout
         </NavLink>
     </>
 );

@@ -3,6 +3,7 @@ import { Routes,Route } from 'react-router-dom'
 import Homedashboard from './Homedashboard'
 import Texteditor from '../Features/Texteditor'
 import Editorlogin from '../Features/Editorlogin'
+import Aimodel from '../Features/Aimodel'
 
 const Content = () => {
   return (
@@ -10,6 +11,7 @@ const Content = () => {
       <Routes>
         <Route path="/" element={<Homedashboard />} />
         <Route path="/edit-text" element={<Editorlogin />} />
+        <Route path="/enhance" element={<Aimodel />} />
         <Route path="/text-editor/:roomId" element={<Texteditor />} />
       </Routes>
     </div>
