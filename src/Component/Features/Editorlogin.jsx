@@ -5,7 +5,7 @@ import { createEditor } from '../Services/Editor';
 
 const Editorlogin = () => {
   const [code, setCode] = useState("");
-  const { generatedLink, setGeneratedLink } = useAccessCard();
+  // const { generatedLink, setGeneratedLink } = useAccessCard();
   const navigate = useNavigate();
   const [showLinkDropdown, setShowLinkDropdown] = useState(false);
 
@@ -23,7 +23,7 @@ const Editorlogin = () => {
 
     console.log(newLink)
 
-    setGeneratedLink(newLink);
+    // setGeneratedLink(newLink);
     // navigate(`/text-editor/${newLink}`)
     createEditor({
       editorId: newLink,

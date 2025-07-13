@@ -1,3 +1,4 @@
+import { saveAs } from 'file-saver';
 import React, { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -8,6 +9,8 @@ import { getToken, isLoggedIn } from "../Localstorage";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchContent, updateContent } from "../Services/Editor";
 
+
+// Allow custom font sizes
 const Size = Quill.import("formats/size");
 Size.whitelist = ["10px", "12px", "14px", "16px", "18px", "24px", "32px"];
 Quill.register(Size, true);
@@ -47,6 +50,8 @@ const TextEditor = () => {
   const lastAcceptedDelta = useRef(null);
   let closeAttempt = 0;
   const versionIdRef = useRef(null);
+  const [copied, setCopied] = useState(false);
+
 
   useEffect(() => {
     if (!isLoggedIn()) return;
@@ -73,10 +78,10 @@ const TextEditor = () => {
       );
 
     const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
-    socket.onopen = () => {
-      console.log("Connected to WebSocket");
-      setWs(socket);
-    };
+      socket.onopen = () => {
+        console.log("Connected to WebSocket");
+        setWs(socket);
+      };
     //check
     socket.onmessage = (event) => {
       try {
@@ -159,70 +164,81 @@ const TextEditor = () => {
   };
 
   const downloadPDF = () => {
-    const element = document.createElement("div");
-    element.innerHTML = `
-      <style>
-        .ql-align-center { text-align: center; }
-        .ql-align-right { text-align: right; }
-        .ql-align-justify { text-align: justify; }
-        .ql-size-10px { font-size: 10px; }
-        .ql-size-12px { font-size: 12px; }
-        .ql-size-14px { font-size: 14px; }
-        .ql-size-16px { font-size: 16px; }
-        .ql-size-18px { font-size: 18px; }
-        .ql-size-24px { font-size: 24px; }
-        .ql-size-32px { font-size: 32px; }
-        body { font-family: Arial, sans-serif; }
-      </style>
-      ${formData.content}
-    `;
+    const editor = document.querySelector('.ql-editor');
 
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = formData.content;
-    const heading = tempDiv.querySelector("h1, h2, h3, h4, h5, h6");
-    let title = heading ? heading.textContent.trim() : "text-editor-content";
-    title = title.replace(/[<>:"/\\|?*]+/g, "").substring(0, 50);
+    const opt = {
+      margin: 0.5,
+      filename: 'text-editor-content.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 3,
+        useCORS: true,
+        logging: true,
+      },
+      jsPDF: {
+        unit: 'in',
+        format: 'letter',
+        orientation: 'portrait'
+      }
+    };
 
     html2pdf()
-      .from(element)
-      .set({
-        margin: 1,
-        filename: `${title}.pdf`,
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+      .from(editor)
+      .set(opt)
+      .outputPdf('blob')
+      .then((pdfBlob) => {
+        saveAs(pdfBlob, opt.filename);
       })
-      .save();
+      .catch((err) => {
+        console.error("PDF generation failed:", err);
+      });
   };
-
   return (
     <div className="bg-gray-100 min-h-[90vh] flex justify-center px-4 py-8 sm:py-10 md:py-12">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-6xl p-4 sm:p-6 md:p-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2 gap-4">
           <h2 className="text-xl sm:text-2xl font-semibold">Text Editor</h2>
 
-          <button
-            type="button"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-md transition cursor-pointer"
-            onClick={downloadPDF}
-          >
-            Download PDF
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition"
+              onClick={() => {
+                navigator.clipboard.writeText(generatedLink || window.location.href.substring(window.location.href.lastIndexOf('/') + 1));
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+            >
+              {copied ? "Copied!" : "Copy Link"}
+            </button>
+
+            <button
+              type="button"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-md transition cursor-pointer"
+              onClick={downloadPDF}
+            >
+              Download PDF
+            </button>
+          </div>
         </div>
 
+
         <form onSubmit={(e) => e.preventDefault()}>
-          <ReactQuill
-            ref={quillRef}
-            value={formData.content}
-            modules={modules}
-            theme="snow"
-            placeholder="Waiting for WebSocket content..."
-            className="min-h-[200px] h-[300px] mb-6"
-            onChange={handleQuillChange}
-          />
+
+          <div id="editor-content">
+            <ReactQuill
+              ref={quillRef}
+              value={formData.content}
+              modules={modules}
+              theme="snow"
+              placeholder="Waiting for WebSocket content..."
+              className="min-h-[200px] h-[300px] mb-6"
+              onChange={handleQuillChange}
+            />
+          </div>
         </form>
       </div>
     </div>
-
   );
 };
 

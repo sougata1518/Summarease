@@ -1,34 +1,116 @@
 import React, { useState } from 'react';
 import Spinner from '../Loadbar/Spinner';
+import { publicAxios } from '../Services/Helper';
+import { saveAs } from 'file-saver';
+import { aiGrammerResponse, aiKeyResponse, aiSummaryResponse } from '../Services/Editor';
+import { useAccessCard } from '../Globalvariable/Accessprovider';
 
 const Aimodel = () => {
   const [highlighted, setHighlighted] = useState(false);
+  const [formData, setFormData] = useState(null)
   const [fileName, setFileName] = useState("");
   const [loading, setLoading] = useState(false);
+  const { setNotification } = useAccessCard();
+
+  const showNotification = (msg, type) => {
+    setNotification({ message: msg, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setHighlighted(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      setFileName(file.name);
+
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showNotification("Please upload a valid PDF file.", "warning")
+      return;
     }
+
+    const newFormData = new FormData();
+    newFormData.append("pdfFile", file);
+
+    setFileName(file.name);
+    setFormData(newFormData);
   };
+
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFileName(file.name);
+    const file = e.target?.files?.[0];
+    if (!file) {
+      showNotification("No file selected", "warning")
+      return;
+    }
+
+    if (file.type !== "application/pdf") {
+      showNotification("Please upload a valid PDF file.", "warning")
+      e.target.value = "";
+      return;
+    }
+
+    const newFormData = new FormData();
+    newFormData.append("pdfFile", file);
+
+    setFileName(file.name);
+    setFormData(newFormData);
+  };
+
+  const handleSummaryCardClick = async (title) => {
+    if (!formData) {
+      showNotification("No file uploaded", "warning")
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await aiSummaryResponse(formData);
+      downloadBlob(response)
+    } catch (error) {
+      showNotification("Something went wrong while downloading the file. Check server logs or file path.", "error");
     }
   };
 
-  const handleCardClick = (title) => {
+  const handleGrammerCardClick = async (title) => {
+    if (!formData) {
+      showNotification("No file uploaded", "warning")
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      alert(`${title} processing completed!`);
-    }, 2000);
+    try {
+      const response = await aiGrammerResponse(formData);
+      downloadBlob(response)
+    } catch (error) {
+      showNotification("Something went wrong while downloading the file. Check server logs or file path.", "error");
+    }
   };
+
+  const handleKeyCardClick = async (title) => {
+    if (!formData) {
+      showNotification("No file uploaded", "warning")
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await aiKeyResponse(formData);
+      downloadBlob(response)
+    } catch (error) {
+      showNotification("Something went wrong while downloading the file. Check server logs or file path.", "error");
+    }
+  };
+
+  const downloadBlob = (response) => {
+    const blob = new Blob([response], { type: "application/pdf" });
+
+    let safeName = fileName.trim();
+    if (!safeName.toLowerCase().endsWith(".pdf")) {
+      safeName += ".pdf";
+    }
+
+    saveAs(blob, safeName);
+    showNotification("File downloaded successfully (" + safeName + ")", "success");
+    setLoading(false);
+  }
 
   return (
     <div className="relative min-h-screen bg-slate-100 dark:bg-slate-900 text-black flex flex-col items-center px-1 py-10">
@@ -74,11 +156,10 @@ const Aimodel = () => {
         />
       </div>
 
-      {/* Cards Section */}
       <div className="w-full max-w-6xl mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card title="Summary" description="Get a concise overview of the uploaded document." onClick={() => handleCardClick("Summary")} />
-        <Card title="Key Point" description="Extract the key highlights and focus areas." onClick={() => handleCardClick("Key Point")} />
-        <Card title="Grammar" description="Identify and correct grammar issues in your text." onClick={() => handleCardClick("Grammar")} />
+        <Card title="Summary" description="Get a concise overview of the uploaded document." onClick={() => handleSummaryCardClick("Summary")} />
+        <Card title="Key Point" description="Extract the key highlights and focus areas." onClick={() => handleKeyCardClick("Key Point")} />
+        <Card title="Grammar" description="Identify and correct grammar issues in your text." onClick={() => handleGrammerCardClick("Grammar")} />
       </div>
     </div>
   );

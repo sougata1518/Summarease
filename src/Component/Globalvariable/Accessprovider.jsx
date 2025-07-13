@@ -2,11 +2,12 @@ import React, { createContext, useState , useContext } from 'react'
 const AccessCardContext = createContext();
 
 export const Accessprovider = ({children}) => {
-    const [generatedLink, setGeneratedLink] = useState("");
+    // const [generatedLink, setGeneratedLink] = useState("");
+    const [notification, setNotification] = useState(null);
 
   return (
     <AccessCardContext.Provider
-    value={{generatedLink,setGeneratedLink}}
+    value={{notification, setNotification}}
     >{children}</AccessCardContext.Provider>
   )
 }

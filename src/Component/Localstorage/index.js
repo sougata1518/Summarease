@@ -20,6 +20,14 @@ export const isLoggedIn = () =>{
     }
 }
 
+export const getCurrentUser = () => {
+  if (isLoggedIn()) {
+    return JSON.parse(localStorage.getItem("user-innovator"));
+  }
+  return null;
+};
+
+
 // getToken
 export const getToken = () =>{
     if(isLoggedIn()){
