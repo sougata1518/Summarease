@@ -38,3 +38,17 @@ export const aiKeyResponse = async (formdata) => {
     })
         .then(response => response.data)
 }
+
+export const saveVersion = async (data) => {
+  return privateAxios.post(`/saveVersion`, data);
+};
+
+export const fetchAllVersions = async (editorId) => {
+  const response = await privateAxios.get(`/fetchAllVer/${editorId}`);
+  return response.data;
+};
+
+export const fetchVersionById = async (verId) => {
+  const response = await privateAxios.get(`/fetchVersion/${verId}`);
+  return response.data;
+};

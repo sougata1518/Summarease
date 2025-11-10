@@ -7,7 +7,8 @@ import Quill from "quill";
 import { useAccessCard } from "../Globalvariable/Accessprovider";
 import { getToken, isLoggedIn } from "../Localstorage";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchContent, updateContent,saveVersion,fetchAllVersions,fetchVersionById,createEditor,setContent } from "../Services/Editor";
+import { fetchContent, updateContent } from "../Services/Editor";
+
 
 // Allow custom font sizes
 const Size = Quill.import("formats/size");
@@ -32,8 +33,6 @@ const modules = {
 };
 
 const TextEditor = () => {
-    const [versions, setVersions] = useState([]); // 👈 store versions
-
   const pendingSelection = useRef(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -77,14 +76,6 @@ const TextEditor = () => {
       .catch((error) => console.log(error)
 
       );
-
-      // Fetch all saved versions immediately when component mounts
-  fetchAllVersions(roomId)
-    .then((versionsData) => {
-      console.log("Fetched Versions:", versionsData);
-      setVersions(versionsData);
-    })
-    .catch((err) => console.error("Failed to fetch versions:", err));
 
     const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
       socket.onopen = () => {
@@ -202,122 +193,138 @@ const TextEditor = () => {
         console.error("PDF generation failed:", err);
       });
   };
-
-  //  Save Version
-  const handleSaveVersion = async () => {
-    try {
-      const quill = quillRef.current.getEditor();
-      const deltaJson = JSON.stringify(quill.getContents());
-      await saveVersion({ deltaJson, editorId: roomId });
-      alert("Version saved!");
-      const updated = await fetchAllVersions(roomId);
-      setVersions(updated);
-    } catch (err) {
-      console.error("Save version failed:", err);
-      alert("Failed to save version");
-    }
-  };
-
-  //  Load Version
-  const handleLoadVersion = async (id) => {
-    try {
-      const ver = await fetchVersionById(id);
-      if (ver && quillRef.current) {
-        const quill = quillRef.current.getEditor();
-        //  createEditor({
-        //       editorId:   generatedLink ||
-        //             window.location.href.substring(window.location.href.lastIndexOf('/') + 1),
-        //       deltaJson: ver.deltaJson
-        //     }, () => {});
-        setContent({uuid:generatedLink ||  window.location.href.substring(window.location.href.lastIndexOf('/') + 1),
-          fullDoc:ver.deltaJson
-        })
-        quill.setContents(JSON.parse(ver.deltaJson));
-      }
-    } catch (err) {
-      console.error("Version load failed:", err);
-      alert("Could not load version");
-    }
-  };
-
   return (
     <div className="bg-gray-100 min-h-[90vh] flex justify-center px-4 py-8 sm:py-10 md:py-12">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-6xl flex">
-        
-        {/* Sidebar */}
-        <aside className="w-56 bg-gray-50 border-r border-gray-200 p-4 flex flex-col">
-          <h3 className="text-lg font-semibold mb-3">Versions</h3>
-          <button
-            onClick={handleSaveVersion}
-            className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md mb-4 transition"
-          >
-            + Save Version
-          </button>
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-6xl p-4 sm:p-6 md:p-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2 gap-4">
+          <h2 className="text-xl sm:text-2xl font-semibold">Text Editor</h2>
 
-          <div className="overflow-y-auto flex-1">
-            {versions.length === 0 ? (
-              <p className="text-gray-500 text-sm">No versions yet</p>
-            ) : (
-              versions.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => handleLoadVersion(v.id)}
-                  className="w-full text-left px-3 py-2 mb-2 rounded-md border border-gray-200 hover:bg-gray-100 transition"
-                >
-                  Version #{v.id}
-                </button>
-              ))
-            )}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition"
+              onClick={() => {
+                navigator.clipboard.writeText(generatedLink || window.location.href.substring(window.location.href.lastIndexOf('/') + 1));
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+            >
+              {copied ? "Copied!" : "Copy Link"}
+            </button>
+
+            <button
+              type="button"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-md transition cursor-pointer"
+              onClick={downloadPDF}
+            >
+              Download PDF
+            </button>
           </div>
-        </aside>
-
-        {/* ✏ Main Editor */}
-        <div className="flex-1 p-4 sm:p-6 md:p-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2 gap-4">
-            <h2 className="text-xl sm:text-2xl font-semibold">Text Editor</h2>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    generatedLink ||
-                    window.location.href.substring(window.location.href.lastIndexOf('/') + 1)
-                  );
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-              >
-                {copied ? "Copied!" : "Copy Link"}
-              </button>
-
-              <button
-                type="button"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-md transition cursor-pointer"
-                onClick={downloadPDF}
-              >
-                Download PDF
-              </button>
-            </div>
-          </div>
-
-          <form onSubmit={(e) => e.preventDefault()}>
-            <div id="editor-content">
-              <ReactQuill
-                ref={quillRef}
-                value={formData.content}
-                modules={modules}
-                theme="snow"
-                placeholder="Waiting for WebSocket content..."
-                className="min-h-[200px] h-[300px] mb-6"
-                onChange={handleQuillChange}
-              />
-            </div>
-          </form>
         </div>
+
+
+        <form onSubmit={(e) => e.preventDefault()}>
+
+          <div id="editor-content">
+            <ReactQuill
+              ref={quillRef}
+              value={formData.content}
+              modules={modules}
+              theme="snow"
+              placeholder="Waiting for WebSocket content..."
+              className="min-h-[200px] h-[300px] mb-6"
+              onChange={handleQuillChange}
+            />
+          </div>
+        </form>
       </div>
     </div>
   );
 };
 
 export default TextEditor;
+
+
+@Autowired
+    private VersionService versionService;
+    @PostMapping("/saveVersion")
+    public boolean setFullContent(@RequestBody SaveVersionDTO saveVersionDTO){
+        return versionService.save(saveVersionDTO);
+    }
+    @GetMapping("/fetchVersion/{verId}")
+    public ResponseEntity<?> fetchVer(@PathVariable String verId){
+        VersionControl versionObj=versionService.fetchVersionControl(Long.parseLong(verId));
+        if(versionObj==null){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(versionObj,HttpStatus.OK);
+    }
+    @GetMapping("/fetchAllVer/{editorId}")
+    public ResponseEntity<?> fetchAllVer(@PathVariable String editorId){
+        return new ResponseEntity<>(versionService.fetchAllVersions(editorId),HttpStatus.OK);
+    }
+
+
+package com.pdfai.pdfai.dto;
+
+public class SaveVersionDTO {
+    private String deltaJson;
+    private String editorId;
+    public String getEditorId() {
+        return editorId;
+    }
+    public void setEditorId(String editorId) {
+        this.editorId = editorId;
+    }
+    public String getDeltaJson() {
+        return deltaJson;
+    }
+
+    public void setDeltaJson(String deltaJson) {
+        this.deltaJson = deltaJson;
+    }
+
+}
+
+
+package com.pdfai.pdfai.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+public class VersionControl {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
+    @ManyToOne
+    @JoinColumn(name = "editorId", referencedColumnName = "editorId", nullable = false)
+    private TextContent textContent;
+    @Column(columnDefinition = "TEXT")
+    private String deltaJson;
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public TextContent getTextContent() {
+        return textContent;
+    }
+
+    public void setTextContent(TextContent textContent) {
+        this.textContent = textContent;
+    }
+
+    public String getDeltaJson() {
+        return deltaJson;
+    }
+
+    public void setDeltaJson(String deltaJson) {
+        this.deltaJson = deltaJson;
+    }
+}
+
+
+give a save button to save version .......and show all version in the left of side 
