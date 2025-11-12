@@ -7,7 +7,7 @@ import Quill from "quill";
 import { useAccessCard } from "../Globalvariable/Accessprovider";
 import { getToken, isLoggedIn } from "../Localstorage";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchContent, updateContent,saveVersion,fetchAllVersions,fetchVersionById,createEditor,setContent } from "../Services/Editor";
+import { fetchContent, updateContent, saveVersion, fetchAllVersions, fetchVersionById, createEditor, setContent } from "../Services/Editor";
 
 // Allow custom font sizes
 const Size = Quill.import("formats/size");
@@ -32,7 +32,7 @@ const modules = {
 };
 
 const TextEditor = () => {
-    const [versions, setVersions] = useState([]); // 👈 store versions
+  const [versions, setVersions] = useState([]); // 👈 store versions
 
   const pendingSelection = useRef(null);
   const [formData, setFormData] = useState({
@@ -78,57 +78,71 @@ const TextEditor = () => {
 
       );
 
+    const fetchInterval = setInterval(() => {
       // Fetch all saved versions immediately when component mounts
-  fetchAllVersions(roomId)
-    .then((versionsData) => {
-      console.log("Fetched Versions:", versionsData);
-      setVersions(versionsData);
-    })
-    .catch((err) => console.error("Failed to fetch versions:", err));
+      fetchAllVersions(roomId)
+        .then((versionsData) => {
+          console.log("Fetched Versions:", versionsData);
+          setVersions(versionsData);
+        })
+        .catch((err) => console.error("Failed to fetch versions:", err));
+    }, 1000)
 
     const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
-      socket.onopen = () => {
-        console.log("Connected to WebSocket");
-        setWs(socket);
-      };
+    socket.onopen = () => {
+      console.log("Connected to WebSocket");
+      setWs(socket);
+    };
     //check
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log(data)
         versionIdRef.current = data.version
         const update = JSON.parse(data.updateDoc);
         const quill = quillRef.current?.getEditor();
         if (!quill) return;
+        if (data.fullDocChanged === false) {
 
-        isSocketUpdate.current = true;
-        quill.updateContents(update);
-        isSocketUpdate.current = false;
 
-        lastAcceptedDelta.current = quill.getContents();
-        setFormData((prev) => ({
-          ...prev,
-          content: quill.root.innerHTML,
-        }));
+          isSocketUpdate.current = true;
+          quill.updateContents(update);
+          isSocketUpdate.current = false;
 
-        // Check if the incoming delta contains a new line insert
-        const ops = update.ops || [];
-        const hasNewline = ops.some(
-          (op) => typeof op.insert === "string" && op.insert.includes("\n")
-        );
+          lastAcceptedDelta.current = quill.getContents();
+          setFormData((prev) => ({
+            ...prev,
+            content: quill.root.innerHTML,
+          }));
 
-        if (hasNewline) {
-          setTimeout(() => {
-            const len = quill.getLength();
-            quill.focus();
-            quill.setSelection(len - 1, 0);
-          }, 0);
-        }
-        // Restore selection if set manually from elsewhere
-        if (pendingSelection.current) {
-          const { index, length } = pendingSelection.current;
-          const safeIndex = Math.min(index, quill.getLength() - 1);
-          quill.setSelection(safeIndex, length);
-          pendingSelection.current = null;
+          // Check if the incoming delta contains a new line insert
+          const ops = update.ops || [];
+          const hasNewline = ops.some(
+            (op) => typeof op.insert === "string" && op.insert.includes("\n")
+          );
+
+          if (hasNewline) {
+            setTimeout(() => {
+              const len = quill.getLength();
+              quill.focus();
+              quill.setSelection(len - 1, 0);
+            }, 0);
+          }
+          // Restore selection if set manually from elsewhere
+          if (pendingSelection.current) {
+            const { index, length } = pendingSelection.current;
+            const safeIndex = Math.min(index, quill.getLength() - 1);
+            quill.setSelection(safeIndex, length);
+            pendingSelection.current = null;
+          }
+        } else {
+          quill.setContents(JSON.parse(data.fullDoc));
+          lastAcceptedDelta.current = quill.getContents();
+          setFormData((prev) => ({
+            ...prev,
+            content: quill.root.innerHTML,
+          }));
+
         }
       } catch (err) {
         console.error("Failed to parse WebSocket message:", err);
@@ -147,7 +161,10 @@ const TextEditor = () => {
       }
     };
 
-    return () => socket.close();
+    return () => {
+      clearInterval(fetchInterval)
+      socket.close();
+    }
   }, [roomId, jwt, navigate]);
 
   const handleQuillChange = (value, delta, source, editor) => {
@@ -229,10 +246,11 @@ const TextEditor = () => {
         //             window.location.href.substring(window.location.href.lastIndexOf('/') + 1),
         //       deltaJson: ver.deltaJson
         //     }, () => {});
-        setContent({uuid:generatedLink ||  window.location.href.substring(window.location.href.lastIndexOf('/') + 1),
-          fullDoc:ver.deltaJson
+        setContent({
+          version: versionIdRef.current,
+          uuid: roomId,
+          fullDoc: ver.deltaJson
         })
-        quill.setContents(JSON.parse(ver.deltaJson));
       }
     } catch (err) {
       console.error("Version load failed:", err);
@@ -243,7 +261,7 @@ const TextEditor = () => {
   return (
     <div className="bg-gray-100 min-h-[90vh] flex justify-center px-4 py-8 sm:py-10 md:py-12">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-6xl flex">
-        
+
         {/* Sidebar */}
         <aside className="w-56 bg-gray-50 border-r border-gray-200 p-4 flex flex-col">
           <h3 className="text-lg font-semibold mb-3">Versions</h3>
