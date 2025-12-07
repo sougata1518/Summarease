@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { loginUser } from "../Services/User";
 import { doLogin, isLoggedIn, doLogout } from "../Localstorage";
 import { useAccessCard } from "../Globalvariable/Accessprovider";
+import logo from "../../assets/logo1.jpeg"
 
 const CLIENT_ID = "1063873795909-9du6s0hvtl0gf27gqvncvqsnprforg2j.apps.googleusercontent.com";
 const REDIRECT_URI = "http://localhost:5173";
@@ -19,9 +20,9 @@ const Navbar = () => {
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
 
-    const showNotification = (msg,type) => {
-        setNotification({message:msg,type})
-        setTimeout(() => setNotification(null),3000);
+    const showNotification = (msg, type) => {
+        setNotification({ message: msg, type })
+        setTimeout(() => setNotification(null), 3000);
     }
 
     useEffect(() => {
@@ -32,12 +33,14 @@ const Navbar = () => {
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = decodeURIComponent(urlParams.get("code") || "");
+        console.log("code = ", code)
         if (code && code.length > 5) {
             loginUser({ codeStr: code })
                 .then((response) => {
+                    console.log("user_resp = ", response)
                     doLogin(response, () => {
                         setUser(response);
-                        showNotification("Login Successful","success")
+                        showNotification("Login Successful", "success")
                         navigate("/");
                     });
                 })
@@ -56,7 +59,15 @@ const Navbar = () => {
     }, []);
 
     const handleGoogleLogin = () => {
-        const googleAuthURL = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent`;
+        const googleAuthURL = `https://accounts.google.com/o/oauth2/v2/auth
+?response_type=code
+&client_id=${CLIENT_ID}
+&redirect_uri=${REDIRECT_URI}
+&scope=openid%20email%20profile
+&access_type=offline
+&prompt=consent`.replace(/\s+/g, '');
+
+        // const googleAuthURL = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=openid%20https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent`;
         window.location.href = googleAuthURL;
     };
 
@@ -64,14 +75,27 @@ const Navbar = () => {
         doLogout();
         setUser(null);
         setMenuOpen(!menuOpen)
-        showNotification("Logout Successful","success")
+        showNotification("Logout Successful", "success")
         navigate("/");
     };
 
     return (
         <>
             <nav className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between relative">
-                <div className="text-xl font-bold">My Dashboard</div>
+
+                <div className="flex items-center gap-1 cursor-pointer" onClick={() => navigate("/")}>
+                    <div className="w-10 h-10 rounded-full overflow-hidden shadow-md border border-slate-700">
+                        <img src={logo} alt="logo" className="w-full h-full object-cover" />
+                    </div>
+
+                    <span className="text-lg text-white font-bold tracking-wide">
+                        ummarease
+                    </span>
+                </div>
+
+
+
+
 
                 <div className="md:hidden">
                     <button onClick={() => setMenuOpen(!menuOpen)} className="cursor-pointer">

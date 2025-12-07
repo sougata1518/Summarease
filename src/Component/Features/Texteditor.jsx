@@ -9,7 +9,6 @@ import { getToken, isLoggedIn } from "../Localstorage";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchContent, updateContent, saveVersion, fetchAllVersions, fetchVersionById, createEditor, setContent } from "../Services/Editor";
 
-// Allow custom font sizes
 const Size = Quill.import("formats/size");
 Size.whitelist = ["10px", "12px", "14px", "16px", "18px", "24px", "32px"];
 Quill.register(Size, true);
@@ -32,7 +31,7 @@ const modules = {
 };
 
 const TextEditor = () => {
-  const [versions, setVersions] = useState([]); // 👈 store versions
+  const [versions, setVersions] = useState([]);
 
   const pendingSelection = useRef(null);
   const [formData, setFormData] = useState({
@@ -44,7 +43,7 @@ const TextEditor = () => {
   const { roomId } = useParams();
   const jwt = getToken();
   const navigate = useNavigate();
-  const { generatedLink } = useAccessCard();
+  const { generatedLink, setNotification } = useAccessCard();
   const quillRef = useRef(null);
   const [ws, setWs] = useState(null);
   const isSocketUpdate = useRef(false);
@@ -53,6 +52,10 @@ const TextEditor = () => {
   const versionIdRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
+  const showNotification = (msg, type) => {
+    setNotification({ message: msg, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   useEffect(() => {
     if (!isLoggedIn()) return;
@@ -79,13 +82,12 @@ const TextEditor = () => {
       );
 
     const fetchInterval = setInterval(() => {
-      // Fetch all saved versions immediately when component mounts
       fetchAllVersions(roomId)
         .then((versionsData) => {
           console.log("Fetched Versions:", versionsData);
           setVersions(versionsData);
         })
-        .catch((err) => console.error("Failed to fetch versions:", err));
+        .catch((err) => showNotification("Failed to fetch versions:", "warning"));
     }, 1000)
 
     const socket = new WebSocket(`ws://localhost:8080/ws/${roomId}/${jwt}`);
@@ -93,7 +95,6 @@ const TextEditor = () => {
       console.log("Connected to WebSocket");
       setWs(socket);
     };
-    //check
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -145,7 +146,7 @@ const TextEditor = () => {
 
         }
       } catch (err) {
-        console.error("Failed to parse WebSocket message:", err);
+        showNotification("Failed to parse WebSocket message:", "warning");
       }
     };
 
@@ -156,7 +157,7 @@ const TextEditor = () => {
       console.log("Disconnected from WebSocket");
       closeAttempt++;
       if (closeAttempt > 1) {
-        alert("WebSocket connection lost.");
+        showNotification("Incorrect Key", "warning")
         navigate("/edit-text");
       }
     };
@@ -226,12 +227,12 @@ const TextEditor = () => {
       const quill = quillRef.current.getEditor();
       const deltaJson = JSON.stringify(quill.getContents());
       await saveVersion({ deltaJson, editorId: roomId });
-      alert("Version saved!");
+      showNotification("Version saved!", "warning");
       const updated = await fetchAllVersions(roomId);
       setVersions(updated);
     } catch (err) {
       console.error("Save version failed:", err);
-      alert("Failed to save version");
+      showNotification("Failed to save version", "warning");
     }
   };
 
@@ -240,12 +241,7 @@ const TextEditor = () => {
     try {
       const ver = await fetchVersionById(id);
       if (ver && quillRef.current) {
-        const quill = quillRef.current.getEditor();
-        //  createEditor({
-        //       editorId:   generatedLink ||
-        //             window.location.href.substring(window.location.href.lastIndexOf('/') + 1),
-        //       deltaJson: ver.deltaJson
-        //     }, () => {});
+        // const quill = quillRef.current.getEditor();
         setContent({
           version: versionIdRef.current,
           uuid: roomId,
@@ -254,7 +250,7 @@ const TextEditor = () => {
       }
     } catch (err) {
       console.error("Version load failed:", err);
-      alert("Could not load version");
+      showNotification("Could not load version", "warning");
     }
   };
 
@@ -276,13 +272,14 @@ const TextEditor = () => {
             {versions.length === 0 ? (
               <p className="text-gray-500 text-sm">No versions yet</p>
             ) : (
-              versions.map((v) => (
+
+              versions.map((v,index) => (
                 <button
                   key={v.id}
                   onClick={() => handleLoadVersion(v.id)}
                   className="w-full text-left px-3 py-2 mb-2 rounded-md border border-gray-200 hover:bg-gray-100 transition"
                 >
-                  Version #{v.id}
+                  Version #{versions.length-index}
                 </button>
               ))
             )}

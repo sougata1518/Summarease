@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Spinner from '../Loadbar/Spinner';
-import { publicAxios } from '../Services/Helper';
 import { saveAs } from 'file-saver';
 import { aiGrammerResponse, aiKeyResponse, aiSummaryResponse } from '../Services/Editor';
 import { useAccessCard } from '../Globalvariable/Accessprovider';
