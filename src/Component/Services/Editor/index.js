@@ -1,3 +1,4 @@
+import { data } from "autoprefixer"
 import { publicAxios, privateAxios } from "../Helper"
 
 export const createEditor = async (textContent, next) => {
@@ -19,36 +20,73 @@ export const setContent = async (doc) => {
 }
 
 export const aiSummaryResponse = async (formdata) => {
-    return await publicAxios.post(`/getResSummary`, formdata, {
-        responseType: "blob"
-    })
-        .then(response => response.data)
-}
+    try {
+        const response = await publicAxios.post(`/getResSummary`, formdata, {
+            responseType: "blob"
+        });
+        return { success: true, data: response.data };
+
+    } catch (error) {
+        const status = error?.response?.status;
+        const message = error?.response?.data;
+
+        return {
+            success: false,
+            status: status || 500,
+            message: message || "Something went wrong"
+        };
+    }
+};
+
 
 export const aiGrammerResponse = async (formdata) => {
-    return await publicAxios.post(`/getResGrammar`, formdata, {
-        responseType: "blob"
-    })
-        .then(response => response.data)
+    try {
+        const response = await publicAxios.post(`/getResGrammar`, formdata, {
+            responseType: "blob"
+        })
+        return { success: true, data: response.data }
+    } catch (error) {
+        const status = error?.response?.status;
+        const message = error?.response?.data;
+
+        return {
+            success: false,
+            status: status || 500,
+            message: message || "Something went wrong"
+        };
+    }
+
 }
 
 export const aiKeyResponse = async (formdata) => {
-    return await publicAxios.post(`/getResKeyWords`, formdata, {
-        responseType: "blob"
-    })
-        .then(response => response.data)
+    try {
+        const response =
+            await publicAxios.post(`/getResKeyWords`, formdata, {
+                responseType: "blob"
+            })
+        return { success: true, data: response.data };
+    } catch (error) {
+        const status = error?.response?.status;
+        const message = error?.response?.data;
+
+        return {
+            success: false,
+            status: status || 500,
+            message: message || "Something went wrong"
+        };
+    }
 }
 
 export const saveVersion = async (data) => {
-  return privateAxios.post(`/saveVersion`, data);
+    return privateAxios.post(`/saveVersion`, data);
 };
 
 export const fetchAllVersions = async (editorId) => {
-  const response = await privateAxios.get(`/fetchAllVer/${editorId}`);
-  return response.data;
+    const response = await privateAxios.get(`/fetchAllVer/${editorId}`);
+    return response.data;
 };
 
 export const fetchVersionById = async (verId) => {
-  const response = await privateAxios.get(`/fetchVersion/${verId}`);
-  return response.data;
+    const response = await privateAxios.get(`/fetchVersion/${verId}`);
+    return response.data;
 };

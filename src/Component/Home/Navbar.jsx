@@ -4,7 +4,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { loginUser } from "../Services/User";
-import { doLogin, isLoggedIn, doLogout } from "../Localstorage";
+import { doLogin, isLoggedIn, doLogout, getCurrentUser } from "../Localstorage";
 import { useAccessCard } from "../Globalvariable/Accessprovider";
 import logo from "../../assets/logo1.jpeg"
 
@@ -15,7 +15,6 @@ const Navbar = () => {
     const { setNotification } = useAccessCard();
     const [showLogin, setShowLogin] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const [user, setUser] = useState(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
@@ -26,11 +25,6 @@ const Navbar = () => {
     }
 
     useEffect(() => {
-        const data = localStorage.getItem("user-innovator");
-        if (data) setUser(JSON.parse(data));
-    }, []);
-
-    useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = decodeURIComponent(urlParams.get("code") || "");
         console.log("code = ", code)
@@ -39,12 +33,12 @@ const Navbar = () => {
                 .then((response) => {
                     console.log("user_resp = ", response)
                     doLogin(response, () => {
-                        setUser(response);
                         showNotification("Login Successful", "success")
-                        navigate("/");
+                        navigate("/")
                     });
                 })
-                .catch((err) => showNotification("Login failed...", "error"));
+                .catch((err) => showNotification("Login failed...", "error")
+            );
         }
     }, [navigate]);
 
@@ -73,10 +67,9 @@ const Navbar = () => {
 
     const handleLogout = () => {
         doLogout();
-        setUser(null);
         setMenuOpen(!menuOpen)
         showNotification("Logout Successful", "success")
-        navigate("/");
+        // navigate("/");
     };
 
     return (
@@ -108,7 +101,7 @@ const Navbar = () => {
                 </div>
 
                 <div className="hidden md:block">
-                    {!user ? (
+                    {!isLoggedIn() ? (
                         <button
                             onClick={() => setShowLogin(true)}
                             className="bg-slate-700 px-4 py-1.5 rounded hover:bg-slate-600"
@@ -118,14 +111,14 @@ const Navbar = () => {
                     ) : (
                         <div className="relative" ref={dropdownRef}>
                             <img
-                                src={user.pfpLink}
+                                src={getCurrentUser()?.pfpLink}
                                 alt="profile"
                                 className="w-10 h-10 rounded-full cursor-pointer border-2 border-white"
                                 onClick={() => setDropdownOpen((prev) => !prev)}
                             />
                             {dropdownOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white text-black rounded-lg shadow-lg p-4 z-50">
-                                    <div className="font-semibold mb-2">{user.username}</div>
+                                    <div className="font-semibold mb-2">{getCurrentUser()?.username}</div>
                                     <button
                                         onClick={handleLogout}
                                         className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
@@ -147,21 +140,21 @@ const Navbar = () => {
                         transition={{ duration: 0.3 }}
                         className="md:hidden bg-slate-800 text-white px-6 py-4 flex flex-col gap-4 z-30"
                     >
-                        {user ? (
+                        {isLoggedIn() ? (
                             <div className="flex items-center gap-3 border-t pt-4 border-slate-600">
                                 <img
-                                    src={user.pfpLink}
+                                    src={getCurrentUser()?.pfpLink}
                                     alt="profile"
                                     className="w-10 h-10 rounded-full border border-white"
                                 />
                                 <div className="flex flex-col">
-                                    <p className="font-semibold text-white">{user.username}</p>
-                                    <p className="text-sm text-slate-400">{user.email}</p>
+                                    <p className="font-semibold text-white">{getCurrentUser()?.username}</p>
+                                    <p className="text-sm text-slate-400">{getCurrentUser()?.email}</p>
                                 </div>
                             </div>
                         ) : null}
                         <NavLinks />
-                        {!user ? (
+                        {!isLoggedIn() ? (
                             <button
                                 onClick={() => { setShowLogin(true); setMenuOpen(!menuOpen); }}
                                 className="bg-slate-700 px-5 py-2 rounded hover:bg-slate-600"

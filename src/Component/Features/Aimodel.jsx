@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Spinner from '../Loadbar/Spinner';
 import { saveAs } from 'file-saver';
+import { useNavigate } from 'react-router-dom';
 import { aiGrammerResponse, aiKeyResponse, aiSummaryResponse } from '../Services/Editor';
 import { useAccessCard } from '../Globalvariable/Accessprovider';
 
@@ -10,6 +11,7 @@ const Aimodel = () => {
   const [fileName, setFileName] = useState("");
   const [loading, setLoading] = useState(false);
   const { setNotification } = useAccessCard();
+  const navigate = useNavigate()
 
   const showNotification = (msg, type) => {
     setNotification({ message: msg, type });
@@ -64,6 +66,12 @@ const Aimodel = () => {
     setLoading(true);
     try {
       const response = await aiSummaryResponse(formData);
+      if(!response?.success){
+        setLoading(false);
+        showNotification("Something went wrong","warning")
+        navigate("/enhance")
+        return;
+      }
       downloadBlob(response)
     } catch (error) {
       showNotification("Something went wrong while downloading the file. Check server logs or file path.", "error");
@@ -78,6 +86,12 @@ const Aimodel = () => {
     setLoading(true);
     try {
       const response = await aiGrammerResponse(formData);
+      if(!response?.success){
+        setLoading(false);
+        showNotification("Something went wrong","warning")
+        navigate("/enhance")
+        return;
+      }
       downloadBlob(response)
     } catch (error) {
       showNotification("Something went wrong while downloading the file. Check server logs or file path.", "error");
@@ -92,6 +106,12 @@ const Aimodel = () => {
     setLoading(true);
     try {
       const response = await aiKeyResponse(formData);
+      if(!response?.success){
+        setLoading(false);
+        showNotification("Something went wrong","warning")
+        navigate("/enhance")
+        return;
+      }
       downloadBlob(response)
     } catch (error) {
       showNotification("Something went wrong while downloading the file. Check server logs or file path.", "error");

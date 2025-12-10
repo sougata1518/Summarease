@@ -154,10 +154,9 @@ const TextEditor = () => {
 
 
     socket.onclose = () => {
-      console.log("Disconnected from WebSocket");
       closeAttempt++;
       if (closeAttempt > 1) {
-        showNotification("Incorrect Key", "warning")
+        // showNotification("Invalid request", "warning")
         navigate("/edit-text");
       }
     };
